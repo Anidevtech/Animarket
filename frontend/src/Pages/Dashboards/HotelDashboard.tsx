@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, type KeyboardEvent, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import brand from "../../../public/images/brand.png";
 import { FaCartPlus } from "react-icons/fa";
 import hotelProfile from "../../../public/images/hotelPofile.png";
@@ -309,6 +310,8 @@ const AnimalCard = ({ animal, onSelect }: AnimalCardProps) => {
 };
 
 const Sidebar = ({ active, setActive }: SidebarProps) => {
+  const { hotel, logout } = useHotelAuth();
+  const navigate = useNavigate();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
     transactions: false,
     zoom: false,
@@ -333,6 +336,11 @@ const Sidebar = ({ active, setActive }: SidebarProps) => {
 
   const handleDropdownItemClick = (id: string) => {
     setActive(id);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   const navItems = [
@@ -441,10 +449,30 @@ const Sidebar = ({ active, setActive }: SidebarProps) => {
       </div>
 
       <div className="px-3 mt-auto pt-4 border-t border-gray-200 dark:border-white/[0.06] flex flex-col gap-1">
+        {/* Hotel profile info */}
+        {hotel && (
+          <div className="flex items-center gap-2 px-3 py-2 mb-1">
+            {hotel.profileImage || hotel.logo ? (
+              <img
+                src={hotel.profileImage || hotel.logo}
+                alt={hotel.hotelName}
+                className="w-8 h-8 rounded-lg object-cover border border-emerald-500/20 shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
+                {(hotel.hotelName || 'H').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="text-xs font-medium text-gray-700 dark:text-[#e2e8f0] truncate">{hotel.hotelName || 'Hotel'}</span>
+          </div>
+        )}
         <button className="text-xs text-gray-500 dark:text-[#94a3b8] hover:text-gray-700 dark:hover:text-white flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-all duration-200">
           <Icon d={icons.settings} size={14} /> Settings
         </button>
-        <button className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-200">
+        <button
+          onClick={handleLogout}
+          className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-200"
+        >
           <Icon d={icons.logout} size={14} /> Logout
         </button>
       </div>
@@ -452,25 +480,27 @@ const Sidebar = ({ active, setActive }: SidebarProps) => {
   );
 };
 
-const Topbar = ({ darkMode, setDarkMode }) => (
+const Topbar = ({ darkMode, setDarkMode }) => {
+  const { hotel } = useHotelAuth();
+  return (
   <div className="h-16 flex items-center justify-between px-8 border-b border-gray-200 fixed top-0 left-48 right-0 shadow-md dark:border-white/[0.06] bg-white/80 dark:bg-[#0c0e12]/80 backdrop-blur-sm shrink-0">
     <div>
       <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent font-['Sora']">
-        Welcome, Mariote Hotel
+        Welcome, {hotel?.hotelName || 'Hotel'}
       </h1>
     </div>
 
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2 bg-gray-100 dark:bg-[#16191f] border border-gray-200 dark:border-white/[0.07] rounded-xl px-4 py-2 transition-all focus-within:border-emerald-500/50">
         <Icon d={icons.search} size={16} className="text-gray-400 dark:text-[#94a3b8]" />
-        <input 
-          placeholder="Search..." 
-          className="bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#94a3b8] outline-none w-48" 
+        <input
+          placeholder="Search..."
+          className="bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#94a3b8] outline-none w-48"
         />
       </div>
 
-      <button 
-        onClick={() => setDarkMode(!darkMode)} 
+      <button
+        onClick={() => setDarkMode(!darkMode)}
         className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-[#16191f] border border-gray-200 dark:border-white/[0.07] flex items-center justify-center text-gray-500 dark:text-[#94a3b8] hover:bg-gray-200 dark:hover:bg-white/[0.1] transition-all duration-200"
       >
         <Icon d={darkMode ? icons.sun : icons.moon} size={16} />
@@ -487,14 +517,23 @@ const Topbar = ({ darkMode, setDarkMode }) => (
         <FaCartPlus />
       </button>
 
-      <img 
-        src={hotelProfile} 
-        alt="profile" 
-        className="h-10 w-10 rounded-xl object-cover border-2 border-emerald-500/20 hover:border-emerald-500/50 transition-all duration-200 cursor-pointer" 
-      />
+      {hotel?.profileImage || hotel?.logo ? (
+        <img
+          src={hotel.profileImage || hotel.logo}
+          alt={hotel.hotelName}
+          className="h-10 w-10 rounded-xl object-cover border-2 border-emerald-500/20 hover:border-emerald-500/50 transition-all duration-200 cursor-pointer"
+        />
+      ) : (
+        <img
+          src={hotelProfile}
+          alt="profile"
+          className="h-10 w-10 rounded-xl object-cover border-2 border-emerald-500/20 hover:border-emerald-500/50 transition-all duration-200 cursor-pointer"
+        />
+      )}
     </div>
   </div>
-);
+  );
+};
 
 const LivestockDashboard = () => {
   const [animals, setAnimals] = useState([]);
@@ -565,40 +604,54 @@ const LivestockDashboard = () => {
   const [agreementSignature, setAgreementSignature] = useState("");
   const [agreementSigning, setAgreementSigning] = useState(false);
   const [showAgreementPanel, setShowAgreementPanel] = useState(false);
-  const handleLoadAgreement = async () => {
-    if (!selectedAnimal?._id) return;
+
+  const handleLoadAgreement = async (animalId?: string, hotelId?: string) => {
+    const aid = animalId || selectedAnimal?._id;
+    const hid = hotelId || hotel?._id;
+    if (!aid || !hid) return;
     setAgreementLoading(true);
     setAgreementError("");
     try {
-      const response = await fetch(`http://localhost:4000/api/agreements/agreements/animal/${selectedAnimal._id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      // Use hotel-specific agreement lookup: animal + hotel party
+      const response = await fetch(
+        `http://localhost:4000/api/agreements/hotel-animal/${aid}/${hid}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const responseText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(`Agreement service returned an unexpected response (${response.status}).`);
+      }
       if (!response.ok) {
-        throw new Error(data?.message || "Failed to load agreement.");
+        throw new Error(data?.message || "No agreement found for this animal.");
       }
       setAgreement(data.data);
     } catch (error: any) {
-      setAgreementError(error?.message || "Something went wrong while loading the agreement.");
+      setAgreementError(error?.message || "No agreement found for this animal.");
       setAgreement(null);
     } finally {
       setAgreementLoading(false);
     }
   };
+
   const handleSignAgreement = async () => {
     if (!agreement?._id) return;
     if (!agreementSignature.trim()) {
-      setAgreementError("Please type your name to sign.");
+      setAgreementError("Please type your full name to sign.");
       return;
     }
     setAgreementSigning(true);
     setAgreementError("");
     try {
-      const response = await fetch(`http://localhost:4000/api/agreements/agreements/${agreement._id}/sign`, {
+      const response = await fetch(`http://localhost:4000/api/agreements/${agreement._id}/sign`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -611,12 +664,28 @@ const LivestockDashboard = () => {
         throw new Error(data?.message || "Failed to sign agreement.");
       }
       setAgreement(data.data);
+      setAgreementSignature("");
     } catch (error: any) {
       setAgreementError(error?.message || "Something went wrong while signing.");
     } finally {
       setAgreementSigning(false);
     }
   };
+
+  // Auto-load agreement whenever a new animal is selected
+  useEffect(() => {
+    if (selectedAnimal?._id && hotel?._id) {
+      setAgreement(null);
+      setAgreementError("");
+      setShowAgreementPanel(false);
+      handleLoadAgreement(selectedAnimal._id, hotel._id);
+    } else {
+      setAgreement(null);
+      setAgreementError("");
+      setShowAgreementPanel(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAnimal?._id]);
 
   useEffect(() => {
     const fetchAnimals = async () => {
@@ -847,54 +916,124 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
 
             {showAgreementPanel && (
               <div className="bg-gray-50 dark:bg-[#0c0e12] rounded-lg p-4 space-y-3">
-                <h4 className="text-xs font-semibold text-gray-500 dark:text-[#94a3b8] uppercase tracking-wider">Booking & Payment Agreement</h4>
+                <h4 className="text-xs font-semibold text-gray-500 dark:text-[#94a3b8] uppercase tracking-wider flex items-center gap-2">
+                  <Icon d={icons.sign} size={13} /> Hotel–Farmer Agreement
+                </h4>
+
                 {agreementLoading && (
-                  <p className="text-sm text-gray-500 dark:text-[#94a3b8]">Loading agreement...</p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#94a3b8]">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-emerald-500 border-t-transparent" />
+                    Loading agreement…
+                  </div>
                 )}
-                {agreementError && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+
+                {agreementError && !agreementLoading && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
                     {agreementError}
                   </div>
                 )}
-                {agreement && !agreementLoading && (
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{agreement.title}</p>
-                    <p className="text-sm text-gray-500 dark:text-[#94a3b8]">
-                      Price: {agreement.price} {agreement.currency || "RWF"}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Status: {agreement.status}</p>
-                    {agreement.pdfUrl && (
-                      <a
-                        href={agreement.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
-                      >
-                        View Agreement PDF
-                      </a>
-                    )}
-                    {agreement.signatures?.hotel ? (
-                      <p className="text-sm text-emerald-600 dark:text-emerald-400">You have signed this agreement.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={agreementSignature}
-                          onChange={(e) => setAgreementSignature(e.target.value)}
-                          placeholder="Type your full name to sign"
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] text-sm text-gray-900 dark:text-white"
-                        />
-                        <button
-                          onClick={onSignAgreement}
-                          disabled={agreementSigning}
-                          className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
-                        >
-                          {agreementSigning ? "Signing..." : "Sign Agreement"}
-                        </button>
+
+                {agreement && !agreementLoading && (() => {
+                  const hotelSigned = !!agreement.signatures?.hotel;
+                  const farmerSigned = !!agreement.signatures?.farmer;
+                  const fullySigned = hotelSigned && farmerSigned;
+                  const statusLabel = fullySigned
+                    ? 'Fully Signed'
+                    : hotelSigned
+                    ? 'Pending Farmer Signature'
+                    : 'Pending Hotel Signature';
+                  const statusColor = fullySigned
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                    : hotelSigned
+                    ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/20'
+                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20';
+                  return (
+                    <div className="space-y-3">
+                      {/* Status badge */}
+                      <div className="flex items-center justify-between">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${statusColor}`}>
+                          {statusLabel}
+                        </span>
+                        {agreement.pdfUrl && (
+                          <a
+                            href={agreement.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                          >
+                            <Icon d={icons.read} size={12} /> View Agreement
+                          </a>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
+
+                      {/* Agreement details */}
+                      <div className="text-xs space-y-1 text-gray-500 dark:text-[#94a3b8]">
+                        <div className="flex justify-between">
+                          <span>Animal:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{agreement.animal?.name || '—'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Price:</span>
+                          <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                            {agreement.currency || 'RWF'} {Number(agreement.price || 0).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Farmer:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{agreement.parties?.farmer?.name || '—'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Hotel signed:</span>
+                          <span className={hotelSigned ? 'text-emerald-500' : 'text-gray-400'}>{hotelSigned ? '✓ Yes' : '— Not yet'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Farmer signed:</span>
+                          <span className={farmerSigned ? 'text-emerald-500' : 'text-gray-400'}>{farmerSigned ? '✓ Yes' : '— Not yet'}</span>
+                        </div>
+                      </div>
+
+                      {/* Sign action — only if hotel hasn't signed yet */}
+                      {!hotelSigned && (
+                        <div className="space-y-2 pt-1">
+                          <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Type your full name to sign electronically:</p>
+                          <input
+                            type="text"
+                            value={agreementSignature}
+                            onChange={(e) => setAgreementSignature(e.target.value)}
+                            placeholder="Full name as e-signature"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#94a3b8] outline-none focus:border-emerald-500/50 transition-colors"
+                          />
+                          {agreementError && (
+                            <p className="text-xs text-red-500">{agreementError}</p>
+                          )}
+                          <button
+                            onClick={onSignAgreement}
+                            disabled={agreementSigning}
+                            className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                          >
+                            {agreementSigning ? (
+                              <><span className="animate-spin inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full" /> Signing…</>
+                            ) : (
+                              <><Icon d={icons.sign} size={14} /> Sign Agreement</>
+                            )}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Fully signed: view link */}
+                      {fullySigned && agreement.pdfUrl && (
+                        <a
+                          href={agreement.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-2 text-center bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-lg text-sm font-semibold transition-colors border border-sky-500/20"
+                        >
+                          View Signed Agreement
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           {/* Right Column - Details */}
@@ -976,15 +1115,412 @@ const AnimalDetailModal = ({ animal, onClose, onBook, bookingLoading, bookingMes
               {bookingMessage}
             </div>
           )}
-          <button
-            onClick={onBook}
-            disabled={bookingLoading}
-            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors"
-          >
-            {bookingLoading ? "Booking..." : "Book Animal"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onToggleAgreementPanel}
+              className="flex-1 py-3 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+            >
+              <Icon d={icons.sign} size={15} />
+              {agreement
+                ? (agreement.signatures?.hotel && agreement.signatures?.farmer
+                    ? 'View Signed Agreement'
+                    : agreement.signatures?.hotel
+                    ? 'Pending Farmer Signature'
+                    : 'Sign Agreement')
+                : 'View Agreement'}
+            </button>
+            <button
+              onClick={onBook}
+              disabled={bookingLoading}
+              className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors"
+            >
+              {bookingLoading ? "Booking..." : "Book Animal"}
+            </button>
+          </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+const HotelAgreementPage = () => {
+  const { hotel, token } = useHotelAuth();
+  const [agreement, setAgreement] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [signature, setSignature] = useState("");
+  const [signing, setSigning] = useState(false);
+  const [signError, setSignError] = useState("");
+  const [signSuccess, setSignSuccess] = useState("");
+  const [showPdf, setShowPdf] = useState(false);
+
+  useEffect(() => {
+    if (!hotel?._id) return;
+    setLoading(true);
+    setError("");
+    fetch(`http://localhost:4000/api/agreements/hotel/${hotel._id}/my-agreement`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (r) => {
+        const responseText = await r.text();
+        let data: any;
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error(`Agreement service returned an unexpected response (${r.status}).`);
+        }
+        return { response: r, data };
+      })
+      .then(({ response, data }) => {
+        if (!response.ok) {
+          setError(data.message || "No agreement found.");
+          return;
+        }
+        if (data.success) setAgreement(data.data);
+        else setError(data.message || "No agreement found.");
+      })
+      .catch(() => setError("Failed to load agreement."))
+      .finally(() => setLoading(false));
+  }, [hotel?._id]);
+
+  // Derive signature state
+  const hotelSigned = !!agreement?.signatures?.hotel;
+  const farmerSigned = !!agreement?.signatures?.farmer;
+  const fullySigned = hotelSigned && farmerSigned;
+  const agreementStatusLabel = fullySigned
+    ? 'Fully Signed'
+    : hotelSigned
+    ? 'Pending Farmer Signature'
+    : 'Pending Hotel Signature';
+  const agreementStatusColor: Record<string, string> = {
+    'Fully Signed': 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+    'Pending Farmer Signature': 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20',
+    'Pending Hotel Signature': 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+  };
+
+  const handleSign = async () => {
+    if (!signature.trim()) {
+      setSignError("Please type your full name to sign.");
+      return;
+    }
+    setSigning(true);
+    setSignError("");
+    setSignSuccess("");
+    try {
+      const res = await fetch(`http://localhost:4000/api/agreements/${agreement._id}/sign`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ signature: signature.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Signing failed.");
+      setAgreement(data.data);
+      setSignSuccess("Agreement signed successfully!");
+      setSignature("");
+    } catch (e: any) {
+      setSignError(e.message || "Something went wrong.");
+    } finally {
+      setSigning(false);
+    }
+  };
+
+  const statusColor: Record<string, string> = {
+    pending: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+    accepted: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+    completed: "bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20",
+    rejected: "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20",
+    cancelled: "bg-gray-500/15 text-gray-500 dark:text-gray-400 border border-gray-500/20",
+  };
+
+  return (
+    <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12] min-h-screen">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <Icon d={icons.sign} size={20} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Sora']">Hotel–Farmer Agreement</h2>
+          <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Farm Purchase Agreement — review and e-sign below</p>
+        </div>
+        {agreement && (
+          <span className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold border ${agreementStatusColor[agreementStatusLabel] || ''}`}>
+            {agreementStatusLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-emerald-500 border-t-transparent" />
+        </div>
+      )}
+
+      {/* Error / No agreement */}
+      {!loading && error && (
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-8 text-center">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+            <Icon d={icons.analytics} size={28} />
+          </div>
+          <p className="text-amber-700 dark:text-amber-400 font-medium">{error}</p>
+          <p className="text-xs text-amber-600/70 dark:text-amber-400/60 mt-1">Contact admin or book an animal first to generate an agreement.</p>
+        </div>
+      )}
+
+      {/* Agreement Document — Farm Purchase Agreement template (Hotel-Farmer) */}
+      {!loading && agreement && (
+        <div className="space-y-5">
+          {/* Agreement document in Farm Purchase Agreement style */}
+          <div id="hotel-agreement-print" className="bg-white text-gray-900 rounded-2xl border border-gray-200 shadow-sm" style={{ fontFamily: 'Georgia, serif' }}>
+            {/* Header banner */}
+            <div className="text-center py-6 px-8 border-b-2 border-gray-800">
+              <h1 className="text-2xl font-black tracking-widest uppercase text-gray-900">Farm Purchase Agreement</h1>
+              <div className="flex justify-between items-center mt-3 text-xs text-gray-500">
+                <span>State: <span className="border-b border-gray-400 min-w-[80px] inline-block text-gray-800 px-1">Rwanda</span></span>
+                <span>Rev: <span className="border-b border-gray-400 min-w-[40px] inline-block text-gray-800 px-1">1.0</span></span>
+                <span>Date: <span className="border-b border-gray-400 min-w-[100px] inline-block text-gray-800 px-1">{agreement.createdAt ? new Date(agreement.createdAt).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB')}</span></span>
+              </div>
+            </div>
+
+            <div className="px-8 py-6 space-y-6">
+              {/* SELLER (FARMER) block */}
+              <div>
+                <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">SELLER (FARMER)</div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-500 min-w-[55px]">Name:</span>
+                    <span className="border-b border-gray-300 flex-1 font-medium text-gray-900">{agreement.parties?.farmer?.name || '—'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-gray-500 min-w-[50px]">Phone:</span>
+                    <span className="border-b border-gray-300 flex-1 text-gray-700">{agreement.parties?.farmer?.phone || '—'}</span>
+                  </div>
+                  <div className="flex gap-2 col-span-2">
+                    <span className="text-gray-500 min-w-[55px]">Email:</span>
+                    <span className="border-b border-gray-300 flex-1 text-gray-700">{agreement.parties?.farmer?.email || '—'}</span>
+                  </div>
+                  <div className="flex items-center gap-4 col-span-2 text-xs mt-1">
+                    <span className="text-gray-500">Entity:</span>
+                    {['Individual', 'Corporation', 'Partnership', 'LLC'].map(t => (
+                      <label key={t} className="flex items-center gap-1 cursor-default">
+                        <input type="checkbox" readOnly defaultChecked={t === 'Individual'} className="w-3 h-3 accent-gray-700" />
+                        <span className="text-gray-600">{t}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* BUYER (HOTEL) block */}
+              <div>
+                <div className="bg-gray-900 text-white text-center py-1.5 px-3 text-sm font-bold tracking-wide mb-3">BUYER (HOTEL)</div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-gray-500 min-w-[55px]">Name:</span>
+                    <span className="border-b border-gray-300 flex-1 font-medium text-gray-900">
+                      {agreement.parties?.hotel?.hotelName || agreement.parties?.customer?.name || hotel?.hotelName || '—'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-gray-500 min-w-[50px]">Phone:</span>
+                    <span className="border-b border-gray-300 flex-1 text-gray-700">
+                      {agreement.parties?.hotel?.phone || agreement.parties?.customer?.phone || hotel?.phone || '—'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2 col-span-2">
+                    <span className="text-gray-500 min-w-[55px]">Email:</span>
+                    <span className="border-b border-gray-300 flex-1 text-gray-700">
+                      {agreement.parties?.hotel?.email || agreement.parties?.customer?.email || hotel?.email || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 col-span-2 text-xs mt-1">
+                    <span className="text-gray-500">Entity:</span>
+                    {['Individual', 'Corporation', 'Partnership', 'LLC'].map(t => (
+                      <label key={t} className="flex items-center gap-1 cursor-default">
+                        <input type="checkbox" readOnly defaultChecked={t === 'Corporation'} className="w-3 h-3 accent-gray-700" />
+                        <span className="text-gray-600">{t}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Agreement clauses */}
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="font-bold text-gray-900">1. Property Description</p>
+                  <p className="text-gray-600 mt-1 leading-relaxed">
+                    The Seller agrees to sell the following livestock to the Buyer:{' '}
+                    <strong>{agreement.animal?.name || '—'}</strong>, a{' '}
+                    {agreement.animal?.type || '—'} of breed{' '}
+                    <strong>{agreement.animal?.breed || '—'}</strong>
+                    {agreement.animal?.age ? `, aged approximately ${agreement.animal.age}` : ''}
+                    {agreement.animal?.weight ? `, weighing ${agreement.animal.weight} kg` : ''}. The animal is identified with a unique record in the AniMarket Platform
+                    {agreement.animal?.animalId ? ` (ID: ${String(agreement.animal.animalId).slice(-8)})` : ''}.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-900">2. Purchase Price</p>
+                  <p className="text-gray-600 mt-1">
+                    The total purchase price for the above-described property shall be:{' '}
+                    <strong className="text-emerald-700 text-base">{agreement.currency || 'RWF'} {Number(agreement.price || 0).toLocaleString()}</strong>{' '}
+                    (Rwandan Francs). Payment shall be made in full at closing unless otherwise agreed.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-900">3. Earnest Money Deposit</p>
+                  <p className="text-gray-600 mt-1">
+                    Buyer shall deposit an earnest money amount as mutually agreed through AniMarket escrow service. Said amount shall be applied toward the purchase price at closing.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-900">4. Closing</p>
+                  <p className="text-gray-600 mt-1">
+                    The closing of this sale shall occur on a date mutually agreed upon by both parties, facilitated by AniMarket Platform. Both parties shall execute all documents necessary to complete the transfer.
+                  </p>
+                </div>
+
+                {agreement.terms && (
+                  <div>
+                    <p className="font-bold text-gray-900">5. Additional Terms</p>
+                    <p className="text-gray-600 mt-1 leading-relaxed">{agreement.terms}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Transaction reference */}
+              {agreement.transactionId && (
+                <p className="text-xs text-gray-400 border-t border-gray-100 pt-3">
+                  Transaction Ref: {agreement.transactionId}
+                </p>
+              )}
+
+              {/* Signature block */}
+              <div className="pt-4 border-t-2 border-gray-300 grid grid-cols-2 gap-8">
+                <div>
+                  <div className="border-b border-gray-400 h-12 mb-1 flex items-end pb-1">
+                    {agreement.signatures?.farmer && (
+                      <span className="text-base italic text-gray-800 font-semibold" style={{ fontFamily: 'cursive, Georgia, serif' }}>
+                        {agreement.signatures.farmer}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">Seller Signature / Date</p>
+                  <p className="text-xs font-medium mt-1 text-gray-700">{agreement.parties?.farmer?.name || '—'}</p>
+                  {farmerSigned && <p className="text-[10px] text-emerald-600 mt-0.5">✓ Signed</p>}
+                </div>
+                <div>
+                  <div className="border-b border-gray-400 h-12 mb-1 flex items-end pb-1">
+                    {agreement.signatures?.hotel && (
+                      <span className="text-base italic text-emerald-700 font-semibold" style={{ fontFamily: 'cursive, Georgia, serif' }}>
+                        {agreement.signatures.hotel}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">Buyer Signature / Date</p>
+                  <p className="text-xs font-medium mt-1 text-gray-700">
+                    {agreement.parties?.hotel?.hotelName || agreement.parties?.customer?.name || hotel?.hotelName || '—'}
+                  </p>
+                  {hotelSigned && <p className="text-[10px] text-emerald-600 mt-0.5">✓ Signed</p>}
+                </div>
+              </div>
+
+              <div className="text-center text-[10px] text-gray-400 pt-2">
+                Generated via AniMarket Platform · {new Date().getFullYear()} · This is a binding document upon signatures of both parties.
+              </div>
+            </div>
+          </div>
+
+          {/* E-Sign & Status Panel */}
+          <div className="rounded-xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] p-5 space-y-4 shadow-sm">
+            <h3 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+              <Icon d={icons.sign} size={16} className="text-emerald-500" />
+              E-Sign this Agreement
+            </h3>
+
+            {/* Signature status row */}
+            <div className="flex gap-4 text-xs">
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${
+                farmerSigned ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400'
+                : 'bg-gray-50 border-gray-200 text-gray-500 dark:bg-white/[0.03] dark:border-white/[0.06] dark:text-[#94a3b8]'
+              }`}>
+                <Icon d={icons.check} size={12} /> Farmer: {farmerSigned ? 'Signed' : 'Not yet'}
+              </div>
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${
+                hotelSigned ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400'
+                : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400'
+              }`}>
+                <Icon d={icons.sign} size={12} /> Hotel: {hotelSigned ? 'Signed' : 'Awaiting your signature'}
+              </div>
+            </div>
+
+            {hotelSigned ? (
+              <div className="flex items-center gap-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-5 py-4">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Icon d={icons.check} size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">You have signed this agreement</p>
+                  <p className="text-xs text-emerald-600/70 dark:text-emerald-400/60 mt-0.5">
+                    {fullySigned ? 'Both parties have signed. Agreement is fully executed.' : 'Waiting for farmer to sign.'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {signSuccess && (
+                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm">
+                    <Icon d={icons.check} size={16} /> {signSuccess}
+                  </div>
+                )}
+                {signError && (
+                  <div className="rounded-lg border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-4 py-2.5 text-sm text-red-600 dark:text-red-400">
+                    {signError}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Type your full legal name below to apply your electronic signature:</p>
+                <input
+                  type="text"
+                  value={signature}
+                  onChange={(e) => setSignature(e.target.value)}
+                  placeholder="Type your full legal name to sign"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/[0.07] bg-gray-50 dark:bg-[#0c0e12] text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#94a3b8] outline-none focus:border-emerald-500/50 transition-colors"
+                />
+                <button
+                  onClick={handleSign}
+                  disabled={signing}
+                  className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {signing ? (
+                    <><span className="animate-spin inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full" /> Signing…</>
+                  ) : (
+                    <><Icon d={icons.sign} size={16} /> E-Sign Agreement</>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* View signed PDF */}
+            {fullySigned && agreement.pdfUrl && (
+              <a
+                href={agreement.pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 text-sm font-semibold transition-colors"
+              >
+                <Icon d={icons.download} size={16} /> Download / View Signed Agreement
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -998,6 +1534,407 @@ const PlaceholderPage = ({ title }) => (
     <p className="text-gray-500 dark:text-[#94a3b8] text-sm max-w-xs">This section is under construction.</p>
   </div>
 );
+
+const ScheduleZoomPage = () => {
+  const { hotel, token } = useHotelAuth();
+  const [animals, setAnimals] = useState<Animal[]>([]);
+  const [animalsLoading, setAnimalsLoading] = useState(true);
+  const [form, setForm] = useState({
+    animalId: "",
+    title: "",
+    date: "",
+    time: "",
+    duration: "60",
+    timezone: "Africa/Kigali",
+    participants: "",
+    agenda: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [scheduledMeetings, setScheduledMeetings] = useState<any[]>([
+    {
+      id: "zm-001",
+      title: "Animal Sourcing Discussion",
+      date: "2026-09-15",
+      time: "10:00",
+      duration: 45,
+      participants: "farmer@greenvalley.com",
+      animalName: "Selected animal",
+      status: "upcoming",
+    },
+    {
+      id: "zm-002",
+      title: "Livestock Health Briefing",
+      date: "2026-09-18",
+      time: "14:30",
+      duration: 30,
+      participants: "vet@animarkt.rw",
+      animalName: "Selected animal",
+      status: "upcoming",
+    },
+  ]);
+
+  useEffect(() => {
+    const fetchAnimals = async () => {
+      try {
+        const response = await fetch("http://localhost:4000/api/animal/animals?owned=true");
+        if (!response.ok) throw new Error("Failed to load animals");
+        const data = await response.json();
+        const normalized = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.animals)
+          ? data.animals
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
+        setAnimals(normalized);
+      } catch (e: any) {
+        setError(e.message || "Unable to load animals.");
+      } finally {
+        setAnimalsLoading(false);
+      }
+    };
+
+    fetchAnimals();
+  }, []);
+
+  const handleChange = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSchedule = async () => {
+    if (!form.animalId || !form.title.trim() || !form.date || !form.time) {
+      setError("Please select an animal and fill in the meeting title, date, and time.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const payload = {
+        animalId: form.animalId,
+        title: form.title.trim(),
+        description: form.agenda.trim() || undefined,
+        meetingDate: new Date(`${form.date}T${form.time}`).toISOString(),
+        durationMinutes: parseInt(form.duration) || 60,
+        timezone: form.timezone,
+        provider: "zoom",
+        meetingType: "general",
+      };
+
+      const res = await fetch("http://localhost:4000/api/meeting", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = Array.isArray(data?.errors) ? data.errors.join(", ") : data?.message || "Failed to schedule meeting.";
+        throw new Error(msg);
+      }
+
+      setScheduledMeetings((prev) => [
+        {
+          id: data?.data?._id || data?.data?.id || `zm-${Date.now()}`,
+          title: form.title,
+          date: form.date,
+          time: form.time,
+          duration: parseInt(form.duration) || 60,
+          participants: form.participants,
+          animalName: animals.find((animal) => String(animal._id || animal.id) === form.animalId)?.name || "Selected animal",
+          status: "upcoming",
+          joinUrl: data?.data?.meetingLink || data?.data?.joinUrl,
+        },
+        ...prev,
+      ]);
+      setSuccess("Zoom meeting scheduled successfully!");
+      setForm({ animalId: "", title: "", date: "", time: "", duration: "60", timezone: "Africa/Kigali", participants: "", agenda: "", password: "" });
+    } catch (e: any) {
+      setError(e.message || "Something went wrong while scheduling the meeting.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const timezones = [
+    "Africa/Kigali",
+    "Africa/Nairobi",
+    "Africa/Lagos",
+    "Africa/Johannesburg",
+    "Europe/London",
+    "America/New_York",
+    "Asia/Dubai",
+  ];
+
+  const durations = [
+    { value: "15", label: "15 minutes" },
+    { value: "30", label: "30 minutes" },
+    { value: "45", label: "45 minutes" },
+    { value: "60", label: "1 hour" },
+    { value: "90", label: "1.5 hours" },
+    { value: "120", label: "2 hours" },
+  ];
+
+  const inputClass =
+    "w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#0c0e12] text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#94a3b8] outline-none focus:border-emerald-500/50 transition-colors";
+
+  const labelClass = "block text-xs font-medium text-gray-500 dark:text-[#94a3b8] mb-1.5 uppercase tracking-wider";
+
+  return (
+    <div className="flex-1 flex flex-col gap-6 p-8 overflow-y-auto bg-gray-50 dark:bg-[#0c0e12] min-h-screen">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600 dark:text-sky-400">
+          <Icon d={icons.video} size={20} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Sora']">Schedule Zoom Call</h2>
+          <p className="text-xs text-gray-500 dark:text-[#94a3b8]">Set up a Zoom meeting with farmers, agents, or vets</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-5 gap-6">
+        {/* Form Panel */}
+        <div className="col-span-3 rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] p-6 space-y-5 shadow-sm">
+          <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
+            <Icon d={icons.calendar} size={15} className="text-emerald-500" />
+            Meeting Details
+          </h3>
+
+          <div className="rounded-xl border border-sky-200 dark:border-sky-500/20 bg-sky-50 dark:bg-sky-500/10 p-4">
+            <div className="flex items-center gap-2 text-sky-700 dark:text-sky-400 text-xs font-semibold uppercase tracking-wider">
+              <Icon d={icons.herd} size={14} /> Animal for this meeting
+            </div>
+            <p className="mt-1 text-xs text-sky-700/70 dark:text-sky-300/70">Each Zoom meeting must be linked to one animal.</p>
+            <select
+              value={form.animalId}
+              onChange={(e) => handleChange("animalId", e.target.value)}
+              className={inputClass + " mt-3 border-sky-200 dark:border-sky-500/30"}
+              disabled={animalsLoading}
+              required
+            >
+              <option value="">{animalsLoading ? "Loading animals..." : "Select an animal"}</option>
+              {animals.map((animal) => {
+                const animalId = String(animal._id || animal.id || "");
+                return (
+                  <option key={animalId} value={animalId}>
+                    {animal.name || "Unnamed animal"} {animal.breed ? `· ${animal.breed}` : ""}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className={labelClass}>Meeting Title *</label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={(e) => handleChange("title", e.target.value)}
+              placeholder="e.g. Animal Purchase Discussion"
+              className={inputClass}
+            />
+          </div>
+
+          {/* Date & Time row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Date *</label>
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => handleChange("date", e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Time *</label>
+              <input
+                type="time"
+                value={form.time}
+                onChange={(e) => handleChange("time", e.target.value)}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Duration & Timezone row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Duration</label>
+              <select
+                value={form.duration}
+                onChange={(e) => handleChange("duration", e.target.value)}
+                className={inputClass}
+              >
+                {durations.map((d) => (
+                  <option key={d.value} value={d.value}>{d.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Timezone</label>
+              <select
+                value={form.timezone}
+                onChange={(e) => handleChange("timezone", e.target.value)}
+                className={inputClass}
+              >
+                {timezones.map((tz) => (
+                  <option key={tz} value={tz}>{tz}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Participants */}
+          <div>
+            <label className={labelClass}>Participants (emails, comma-separated)</label>
+            <input
+              type="text"
+              value={form.participants}
+              onChange={(e) => handleChange("participants", e.target.value)}
+              placeholder="farmer@example.com, agent@example.com"
+              className={inputClass}
+            />
+          </div>
+
+          {/* Agenda */}
+          <div>
+            <label className={labelClass}>Agenda / Description</label>
+            <textarea
+              value={form.agenda}
+              onChange={(e) => handleChange("agenda", e.target.value)}
+              placeholder="Outline the meeting agenda..."
+              rows={3}
+              className={inputClass + " resize-none"}
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className={labelClass}>Meeting Password (optional)</label>
+            <input
+              type="text"
+              value={form.password}
+              onChange={(e) => handleChange("password", e.target.value)}
+              placeholder="Leave blank for no password"
+              className={inputClass}
+            />
+          </div>
+
+          {/* Feedback messages */}
+          {error && (
+            <div className="rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+              <Icon d={icons.check} size={15} />
+              {success}
+            </div>
+          )}
+
+          {/* Submit */}
+          <button
+            onClick={handleSchedule}
+            disabled={loading}
+            className="w-full h-11 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 hover:shadow-sky-500/35"
+          >
+            {loading ? (
+              <><span className="animate-spin inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full" /> Scheduling…</>
+            ) : (
+              <><Icon d={icons.video} size={16} /> Schedule Zoom Meeting</>
+            )}
+          </button>
+        </div>
+
+        {/* Side panel - upcoming meetings */}
+        <div className="col-span-2 flex flex-col gap-4">
+          {/* Quick tips card */}
+          <div className="rounded-2xl border border-sky-200 dark:border-sky-500/20 bg-sky-50 dark:bg-sky-500/10 p-5">
+            <h4 className="text-sm font-semibold text-sky-700 dark:text-sky-400 flex items-center gap-2 mb-3">
+              <Icon d={icons.bell} size={14} /> Tips
+            </h4>
+            <ul className="text-xs text-sky-700 dark:text-sky-300/80 space-y-2">
+              <li className="flex items-start gap-2"><span className="mt-0.5 text-sky-500">•</span> Invite participants by email so they receive the join link automatically.</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5 text-sky-500">•</span> Set a password to protect sensitive discussions.</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5 text-sky-500">•</span> Confirm the farmer's timezone before scheduling.</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5 text-sky-500">•</span> Add a clear agenda so all parties come prepared.</li>
+            </ul>
+          </div>
+
+          {/* Upcoming meetings */}
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#16191f] p-5 flex flex-col gap-3 flex-1">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Icon d={icons.calendarCheck} size={14} className="text-emerald-500" />
+              Upcoming Meetings
+              <span className="ml-auto text-xs text-gray-400 dark:text-[#94a3b8]">{scheduledMeetings.length}</span>
+            </h4>
+
+            {scheduledMeetings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-[#94a3b8] text-sm gap-2">
+                <Icon d={icons.video} size={28} className="opacity-40" />
+                <span>No meetings scheduled yet</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {scheduledMeetings.map((m) => (
+                  <div
+                    key={m.id}
+                    className="rounded-xl border border-gray-100 dark:border-white/[0.05] bg-gray-50 dark:bg-[#0c0e12] p-3 hover:border-emerald-500/20 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{m.title}</p>
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                        {m.status}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-[#94a3b8]">
+                      <span className="flex items-center gap-1 truncate max-w-[150px]">
+                        <Icon d={icons.herd} size={11} /> {m.animalName || "Animal"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Icon d={icons.calendar} size={11} /> {m.date}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Icon d={icons.clock} size={11} /> {m.time}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Icon d={icons.clock} size={11} /> {m.duration} min
+                      </span>
+                    </div>
+                    {m.participants && (
+                      <p className="mt-1.5 text-[11px] text-gray-400 dark:text-[#94a3b8] truncate">
+                        {m.participants}
+                      </p>
+                    )}
+                    {m.joinUrl && (
+                      <a
+                        href={m.joinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-sky-600 dark:text-sky-400 hover:underline"
+                      >
+                        <Icon d={icons.video} size={11} /> Join Meeting
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const pageMeta = {
   dashboard: { title: "LivestockPro Marketplace" },
@@ -1023,6 +1960,8 @@ const HotelDashboard = () => {
 
   const renderPage = () => {
     if (active === "dashboard") return <LivestockDashboard />;
+    if (active === "sign-agreement" || active === "read-agreement") return <HotelAgreementPage />;
+    if (active === "schedule-zoom") return <ScheduleZoomPage />;
     return <PlaceholderPage title={pageMeta[active]?.title || active} />;
   };
 

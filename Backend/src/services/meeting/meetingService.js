@@ -152,9 +152,9 @@ export const createMeetingService = async (req) => {
         meetingDate, durationMinutes, provider = "webrtc", timezone, scheduledAt, note, meetingLink
     } = req.body;
 
-    const userId = req.user.id;
-
-    const organizer = await User.findById(userId);
+    const isHotelOrganizer = req.user.role === "hotel";
+    const userId = req.user._id || req.user.id;
+    const organizer = isHotelOrganizer ? req.user : await User.findById(userId);
     if (!organizer) throw new Error("Organizer not found");
 
     // Map fields from frontend if provided
@@ -226,7 +226,7 @@ export const createMeetingService = async (req) => {
         title,
         description,
         organizer: userId,
-        organizerType: "user",
+        organizerType: isHotelOrganizer ? "hotel" : "user",
         participants: validParticipants,
         meetingType,
         animal: animal?._id,

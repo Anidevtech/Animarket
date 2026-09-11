@@ -83,8 +83,12 @@ interface AgreementNotification {
   transactionId?: string;
   createdAt?: string;
   animal?: { name?: string; type?: string; breed?: string; age?: number; weight?: number };
-  parties?: { customer?: { name?: string; email?: string; phone?: string }; farmer?: { name?: string; email?: string } };
-  signatures?: { customer?: string; farmer?: string };
+  parties?: {
+    customer?: { name?: string; email?: string; phone?: string };
+    farmer?: { name?: string; email?: string };
+    hotel?: { hotelName?: string; email?: string; phone?: string };
+  };
+  signatures?: { customer?: string; farmer?: string; hotel?: string };
   pdfUrl?: string;
 }
 
@@ -354,7 +358,7 @@ const FarmerDashboard: React.FC = () => {
         const [bookingsResponse, meetingsResponse, agreementsResponse] = await Promise.all([
           axios.get('http://localhost:4000/api/bookings/my-bookings', { headers }),
           axios.get('http://localhost:4000/api/meeting/', { headers }),
-          axios.get('http://localhost:4000/api/agreements/agreements/my-agreements', { headers }),
+          axios.get('http://localhost:4000/api/agreements/my-agreements', { headers }),
         ]);
         setBookingNotifications(bookingsResponse.data.data || []);
         setMeetingNotifications((meetingsResponse.data.data || []).filter((meeting: MeetingNotification) => meeting.animal));
@@ -555,7 +559,7 @@ const FarmerDashboard: React.FC = () => {
       return;
     }
     try {
-      const response = await axios.put(`http://localhost:4000/api/agreements/agreements/${agreementId}/sign`, {
+      const response = await axios.put(`http://localhost:4000/api/agreements/${agreementId}/sign`, {
         signature: farmerSignature.trim(),
       }, { headers: { Authorization: `Bearer ${token}` } });
       const updated = response.data.data;
@@ -646,15 +650,23 @@ const FarmerDashboard: React.FC = () => {
 
     agreements.forEach((agreement) => {
       const customerSigned = !!agreement.signatures?.customer;
+      const hotelSigned = !!agreement.signatures?.hotel;
       const farmerSigned = !!agreement.signatures?.farmer;
-      requests.push({
-        id: `agreement-${agreement._id}`,
-        kind: 'agreement',
-        title: agreement.title || 'Agreement request',
-        detail: `${agreement.parties?.customer?.name || agreement.parties?.customer?.email || 'Customer'} ${customerSigned ? 'signed the agreement and is waiting for your approval' : 'requested an agreement'} for ${agreement.animal?.name || 'your animal'}.`,
-        status: farmerSigned ? 'ready' : customerSigned ? 'waiting for farmer sign' : 'pending',
-        requestId: agreement._id,
-      });
+      const signerName = agreement.parties?.hotel?.hotelName
+        || agreement.parties?.customer?.name
+        || agreement.parties?.customer?.email
+        || 'Customer';
+      // Only notify farmer when hotel or customer has signed but farmer hasn't yet
+      if ((hotelSigned || customerSigned) && !farmerSigned) {
+        requests.push({
+          id: `agreement-${agreement._id}`,
+          kind: 'agreement',
+          title: agreement.title || 'Agreement request',
+          detail: `${signerName} ${hotelSigned ? 'has signed the agreement and is waiting for your approval' : 'requested an agreement'} for ${agreement.animal?.name || 'your animal'}.`,
+          status: 'waiting for farmer sign',
+          requestId: agreement._id,
+        });
+      }
     });
 
     if (bookingNotifications.length > 0 || meetingNotifications.length > 0 || agreements.length > 0) {
@@ -1070,9 +1082,9 @@ const FarmerDashboard: React.FC = () => {
                 className="relative p-2 hover:text-amber-600 transition-colors"
               >
                 <Bell size={25} />
-                {(bookingNotifications.length + meetingNotifications.filter(meeting => meeting.status === 'pending').length + agreements.filter(agreement => agreement.signatures?.customer && !agreement.signatures?.farmer).length) > 0 && (
+                {(bookingNotifications.length + meetingNotifications.filter(meeting => meeting.status === 'pending').length + agreements.filter(agreement => (agreement.signatures?.hotel || agreement.signatures?.customer) && !agreement.signatures?.farmer).length) > 0 && (
                   <span className="absolute -right-1 -top-1 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center">
-                    {bookingNotifications.length + meetingNotifications.filter(meeting => meeting.status === 'pending').length + agreements.filter(agreement => agreement.signatures?.customer && !agreement.signatures?.farmer).length}
+                    {bookingNotifications.length + meetingNotifications.filter(meeting => meeting.status === 'pending').length + agreements.filter(agreement => (agreement.signatures?.hotel || agreement.signatures?.customer) && !agreement.signatures?.farmer).length}
                   </span>
                 )}
               </button>
@@ -1085,8 +1097,8 @@ const FarmerDashboard: React.FC = () => {
                   <div className="max-h-[28rem] space-y-3 overflow-y-auto pt-3">
                     {bookingNotifications.length > 0 && <div><p className="mb-1 text-xs font-semibold text-amber-600">Bookings</p>{bookingNotifications.map(booking => <div key={booking._id} className="rounded-lg bg-slate-50 p-2 text-xs"><strong>{booking.customer?.name || booking.customer?.email || 'Customer'}</strong> booked {booking.animal?.name || 'your animal'}.</div>)}</div>}
                     {meetingNotifications.filter(meeting => meeting.status === 'pending').length > 0 && <div><p className="mb-1 text-xs font-semibold text-blue-600">Zoom requests</p>{meetingNotifications.filter(meeting => meeting.status === 'pending').map(meeting => <div key={meeting._id} className="rounded-lg bg-slate-50 p-2 text-xs"><strong>{meeting.organizer?.name || meeting.organizer?.email || 'Customer'}</strong> requested Zoom for {meeting.animal?.name || 'your animal'}.{meeting.videoCall?.meetingLink && <><br /><a href={meeting.videoCall.meetingLink} target="_blank" rel="noreferrer" className="mt-1 inline-block text-blue-600 underline">Open Zoom link</a></>}<button type="button" onClick={() => approveMeeting(meeting._id)} className="ml-2 rounded-md bg-blue-600 px-2 py-1 text-[10px] font-semibold text-white hover:bg-blue-700">Approve</button></div>)}</div>}
-                    {agreements.filter(agreement => agreement.signatures?.customer && !agreement.signatures?.farmer).length > 0 && <div><p className="mb-1 text-xs font-semibold text-violet-600">Agreements</p>{agreements.filter(agreement => agreement.signatures?.customer && !agreement.signatures?.farmer).map(agreement => <div key={agreement._id} className="rounded-lg bg-slate-50 p-2 text-xs"><strong>{agreement.parties?.customer?.name || agreement.parties?.customer?.email || 'Customer'}</strong> signed {agreement.animal?.name || agreement.title}.<div className="mt-2 flex gap-2"><input value={farmerSignature} onChange={event => setFarmerSignature(event.target.value)} placeholder="Your signature" className="min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-[10px]" /><button type="button" onClick={() => signAgreementAsFarmer(agreement._id)} className="rounded-md bg-violet-600 px-2 py-1 text-[10px] font-semibold text-white hover:bg-violet-700">Sign</button></div></div>)}</div>}
-                    {bookingNotifications.length === 0 && meetingNotifications.filter(meeting => meeting.status === 'pending').length === 0 && agreements.filter(agreement => agreement.signatures?.customer && !agreement.signatures?.farmer).length === 0 && <p className="text-xs text-slate-500">No new notifications.</p>}
+                    {agreements.filter(agreement => (agreement.signatures?.hotel || agreement.signatures?.customer) && !agreement.signatures?.farmer).length > 0 && <div><p className="mb-1 text-xs font-semibold text-violet-600">Agreements</p>{agreements.filter(agreement => (agreement.signatures?.hotel || agreement.signatures?.customer) && !agreement.signatures?.farmer).map(agreement => { const signerName = agreement.parties?.hotel?.hotelName || agreement.parties?.customer?.name || agreement.parties?.customer?.email || 'Customer'; return <div key={agreement._id} className="rounded-lg bg-slate-50 p-2 text-xs"><strong>{signerName}</strong> signed {agreement.animal?.name || agreement.title}.<div className="mt-2 flex gap-2"><input value={farmerSignature} onChange={event => setFarmerSignature(event.target.value)} placeholder="Your signature" className="min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-[10px]" /><button type="button" onClick={() => signAgreementAsFarmer(agreement._id)} className="rounded-md bg-violet-600 px-2 py-1 text-[10px] font-semibold text-white hover:bg-violet-700">Sign</button></div></div>; })}</div>}
+                    {bookingNotifications.length === 0 && meetingNotifications.filter(meeting => meeting.status === 'pending').length === 0 && agreements.filter(agreement => (agreement.signatures?.hotel || agreement.signatures?.customer) && !agreement.signatures?.farmer).length === 0 && <p className="text-xs text-slate-500">No new notifications.</p>}
                     {notificationMessage && <p className="text-xs text-red-600">{notificationMessage}</p>}
                   </div>
                 </div>
